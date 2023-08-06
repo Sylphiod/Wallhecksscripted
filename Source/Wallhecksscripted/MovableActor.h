@@ -4,23 +4,32 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "MovableActor.generated.h"
+#include "MoveableActor.generated.h"
 
 UCLASS()
 class WALLHECKSSCRIPTED_API AMovableActor : public AActor
-{
-	GENERATED_BODY()
-	
-public:	
-	// Sets default values for this actor's properties
-	AMovableActor();
-
-protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
-
-public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
-
-};
+                            {
+                                GENERATED_BODY()
+                            
+                            public:
+                                AMoveableActor();
+                            
+                            protected:
+                                UPROPERTY(EditAnywhere, Category = "Movement")
+                                TArray<FVector> TargetPoints;
+                            
+                                UPROPERTY(EditAnywhere, Category = "Movement")
+                                float MovementSpeed;
+                            
+                                UPROPERTY()
+                                class UTimelineComponent* MovementTimeline;
+                            
+                                UFUNCTION()
+                                void TimelineCallback(float Value);
+                            
+                                UFUNCTION()
+                                void TimelineFinishedCallback();
+                            
+                                UFUNCTION(BlueprintCallable)
+                                void MoveToNextPoint();
+                            };

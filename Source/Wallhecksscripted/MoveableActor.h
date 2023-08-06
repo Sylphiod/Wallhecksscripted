@@ -8,19 +8,28 @@
 
 UCLASS()
 class WALLHECKSSCRIPTED_API AMoveableActor : public AActor
-{
-	GENERATED_BODY()
-	
-public:	
-	// Sets default values for this actor's properties
-	AMoveableActor();
-
-protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
-
-public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
-
-};
+                            {
+                                GENERATED_BODY()
+                            
+                            public:
+                                AMoveableActor();
+                            
+                            protected:
+                                UPROPERTY(EditAnywhere, Category = "Movement")
+                                TArray<FVector> TargetPoints;
+                            
+                                UPROPERTY(EditAnywhere, Category = "Movement")
+                                float MovementSpeed;
+                            
+                                UPROPERTY()
+                                class UTimelineComponent* MovementTimeline;
+                            
+                                UFUNCTION()
+                                void TimelineCallback(float Value);
+                            
+                                UFUNCTION()
+                                void TimelineFinishedCallback();
+                            
+                                UFUNCTION(BlueprintCallable)
+                                void MoveToNextPoint();
+                            };
