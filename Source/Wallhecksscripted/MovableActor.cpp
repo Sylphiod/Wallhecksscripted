@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "MoveableActor.h"
+#include "MovableActor.h"
 #include "Components/TimelineComponent.h"
 
 // Sets default values
@@ -9,15 +9,23 @@ AMovableActor::AMovableActor()
 {
     PrimaryActorTick.bCanEverTick = true;
 
-    // Create the timeline component
     MovementTimeline = CreateDefaultSubobject<UTimelineComponent>(TEXT("MovementTimeline"));
+    MovementTimeline->SetLooping(false);
+    MovementTimeline->SetIgnoreTimeDilation(true);
+
+    MovementSpeed = 500.0f;
+
+    static ConstructorHelpers::FObjectFinder<UCurveFloat> Curve(TEXT("CurveFloat'/Game/Path/To/Your/Curve.FloatCurve'"));
+    MovementCurve = Curve.Object;
 
     // Bind the timeline functions
-    MovementTimeline->AddInterpFloat(MovementCurve, FOnTimelineFloat::CreateUFunction(this, FName("TimelineCallback")));
-    MovementTimeline->SetTimelineFinishedFunc(FOnTimelineEvent::CreateUFunction(this, FName("TimelineFinishedCallback")));
+    FOnTimelineFloat TimelineCallback;
+    TimelineCallback.BindUFunction(this, FName("OnTimelineCallback"));
+    MovementTimeline->AddInterpFloat(MovementCurve, TimelineCallback);
 
-    // Set defaults
-    MovementSpeed = 500.0f; // Change this to adjust the movement speed
+    FOnTimelineEvent TimelineFinishedCallback;
+    TimelineFinishedCallback.BindUFunction(this, FName("OnTimelineFinishedCallback"));
+    MovementTimeline->SetTimelineFinishedFunc(TimelineFinishedCallback);
 }
 
 void AMovableActor::BeginPlay()
@@ -25,13 +33,18 @@ void AMovableActor::BeginPlay()
     Super::BeginPlay();
 }
 
-void AMovableActor::TimelineCallback(float Value)
+void AMovableActor::SetTargetPoints(const TArray<FVector>& NewTargetPoints)
+{
+    TargetPoints = NewTargetPoints;
+}
+
+void AMovableActor::OnTimelineCallback(float Value)
 {
     // Update the actor's position during the timeline interpolation
     SetActorLocation(FMath::Lerp(TargetPoints[0], TargetPoints[1], Value));
 }
 
-void AMovableActor::TimelineFinishedCallback()
+void AMovableActor::OnTimelineFinishedCallback()
 {
     // Move to the next point when the timeline finishes
     MoveToNextPoint();
@@ -42,6 +55,36 @@ void AMovableActor::MoveToNextPoint()
     if (TargetPoints.Num() < 2)
         return;
 
-    // Start a new timeline to interpolate movement between points
+    // If the timeline is already playing, stop it
+    if (MovementTimeline->IsPlaying())
+    {
+        MovementTimeline->Stop();
+    }
+
+    // Clear existing delegates and bindings
+    MovementTimeline->OnTimelineFloat.RemoveAll(this);
+
+    // Create a new timeline for the next set of target points
+    MovementTimeline = NewObject<UTimelineComponent>(this, UTimelineComponent::StaticClass());
+    MovementTimeline->RegisterComponent();
+    MovementTimeline->SetLooping(false);
+    MovementTimeline->SetIgnoreTimeDilation(true);
+
+    // Bind the timeline functions for the new timeline
+    FOnTimelineFloat TimelineCallback;
+    TimelineCallback.BindUFunction(this, FName("OnTimelineCallback"));
+    MovementTimeline->AddInterpFloat(MovementCurve, TimelineCallback);
+
+    FOnTimelineEvent TimelineFinishedCallback;
+    TimelineFinishedCallback.BindUFunction(this, FName("OnTimelineFinishedCallback"));
+    MovementTimeline->SetTimelineFinishedFunc(TimelineFinishedCallback);
+
+    // Update the timeline's movement points for the new target points
+    for (int32 i = 0; i < TargetPoints.Num() - 1; i++)
+    {
+        MovementTimeline->AddInterpVector(TargetPoints[i], TargetPoints[i + 1], true);
+    }
+
+    // Start the new timeline to interpolate movement between points
     MovementTimeline->PlayFromStart();
 }
