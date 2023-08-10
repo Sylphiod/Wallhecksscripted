@@ -2,89 +2,60 @@
 
 
 #include "MoveableActor.h"
-#include "Components/TimelineComponent.h"
+
 
 // Sets default values
 AMoveableActor::AMoveableActor()
 {
+    // Set this actor to call Tick() every frame
     PrimaryActorTick.bCanEverTick = true;
 
-    MovementTimeline = CreateDefaultSubobject<UTimelineComponent>(TEXT("MovementTimeline"));
-    MovementTimeline->SetLooping(false);
-    MovementTimeline->SetIgnoreTimeDilation(true);
-
+    // Initialize default values
+    RestTimeBetweenMovements = 2.0f;
     MovementSpeed = 500.0f;
-
-    static ConstructorHelpers::FObjectFinder<UCurveFloat> Curve(TEXT("CurveFloat'/Game/Path/To/Your/Curve.FloatCurve'"));
-    MovementCurve = Curve.Object;
-
-    // Bind the timeline functions
-    FOnTimelineFloat TimelineCallback;
-    TimelineCallback.BindUFunction(this, FName("OnTimelineCallback"));
-    MovementTimeline->AddInterpFloat(MovementCurve, TimelineCallback);
-
-    FOnTimelineEvent TimelineFinishedCallback;
-    TimelineFinishedCallback.BindUFunction(this, FName("OnTimelineFinishedCallback"));
-    MovementTimeline->SetTimelineFinishedFunc(TimelineFinishedCallback);
+    CurrentRestTime = 0.0f;
+    CurrentPointIndex = 0;
 }
 
+// Called when the game starts or when spawned
 void AMoveableActor::BeginPlay()
 {
     Super::BeginPlay();
+	
+    // Save the initial location of the actor
+    InitialLocation = GetActorLocation();
 }
 
-void AMoveableActor::SetTargetPoints(const TArray<FVector>& NewTargetPoints)
+// Called every frame
+void AMoveableActor::Tick(float DeltaTime)
 {
-    TargetPoints = NewTargetPoints;
-}
+    Super::Tick(DeltaTime);
 
-void AMoveableActor::OnTimelineCallback(float Value)
-{
-    // Update the actor's position during the timeline interpolation
-    SetActorLocation(FMath::Lerp(TargetPoints[0], TargetPoints[1], Value));
-}
-
-void AMoveableActor::OnTimelineFinishedCallback()
-{
-    // Move to the next point when the timeline finishes
-    MoveToNextPoint();
-}
-
-void AMoveableActor::MoveToNextPoint()
-{
-    if (TargetPoints.Num() < 2)
+    // Check if there are movement points defined
+    if (MovementPoints.Num() == 0)
         return;
 
-    // If the timeline is already playing, stop it
-    if (MovementTimeline->IsPlaying())
+    // Calculate the movement direction and distance
+    FVector CurrentTargetPoint = MovementPoints[CurrentPointIndex];
+    FVector Direction = CurrentTargetPoint - GetActorLocation();
+    float DistanceToTarget = Direction.Size();
+
+    // Move the actor towards the target point
+    if (DistanceToTarget > 20f)
     {
-        MovementTimeline->Stop();
+        Direction.Normalize();
+        FVector NewLocation = GetActorLocation() + Direction * MovementSpeed * DeltaTime;
+        SetActorLocation(NewLocation);
     }
-
-    // Clear existing delegates and bindings
-    MovementTimeline->OnTimelineFloat.RemoveAll(this);
-
-    // Create a new timeline for the next set of target points
-    MovementTimeline = NewObject<UTimelineComponent>(this, UTimelineComponent::StaticClass());
-    MovementTimeline->RegisterComponent();
-    MovementTimeline->SetLooping(false);
-    MovementTimeline->SetIgnoreTimeDilation(true);
-
-    // Bind the timeline functions for the new timeline
-    FOnTimelineFloat TimelineCallback;
-    TimelineCallback.BindUFunction(this, FName("OnTimelineCallback"));
-    MovementTimeline->AddInterpFloat(MovementCurve, TimelineCallback);
-
-    FOnTimelineEvent TimelineFinishedCallback;
-    TimelineFinishedCallback.BindUFunction(this, FName("OnTimelineFinishedCallback"));
-    MovementTimeline->SetTimelineFinishedFunc(TimelineFinishedCallback);
-
-    // Update the timeline's movement points for the new target points
-    for (int32 i = 0; i < TargetPoints.Num() - 1; i++)
+    else
     {
-        MovementTimeline->AddInterpVector(TargetPoints[i], TargetPoints[i + 1], true);
+        // If the actor reached the target point, rest for a while
+        CurrentRestTime += DeltaTime;
+        if (CurrentRestTime >= RestTimeBetweenMovements)
+        {
+            // Move to the next point and reset rest time
+            CurrentPointIndex = (CurrentPointIndex + 1) % MovementPoints.Num();
+            CurrentRestTime = 0.0f;
+        }
     }
-
-    // Start the new timeline to interpolate movement between points
-    MovementTimeline->PlayFromStart();
 }
