@@ -41,7 +41,7 @@ void AMoveableActor::Tick(float DeltaTime)
     float DistanceToTarget = Direction.Size();
 
     // Move the actor towards the target point
-    if (DistanceToTarget > 20f)
+    if (DistanceToTarget > 20.0f)
     {
         Direction.Normalize();
         FVector NewLocation = GetActorLocation() + Direction * MovementSpeed * DeltaTime;

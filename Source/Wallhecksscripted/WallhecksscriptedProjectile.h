@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Engine/EngineTypes.h"
 #include "WallhecksscriptedProjectile.generated.h"
 
 class USphereComponent;
