@@ -8,7 +8,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="54c01bd3-cc6c-4ce4-96a0-51a7de7f33a3" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/.idea.Wallhecksscripted/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.Wallhecksscripted/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Content/__ExternalActors__/FirstPerson/Maps/FirstPersonMap/1/7O/VSGU87MR3O7OCD4DFOL5YG.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/Content/__ExternalActors__/FirstPerson/Maps/FirstPersonMap/1/7O/VSGU87MR3O7OCD4DFOL5YG.uasset" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -162,6 +162,7 @@
       <workItem from="1693697767566" duration="7558000" />
       <workItem from="1694039068844" duration="5813000" />
       <workItem from="1694551325152" duration="2355000" />
+      <workItem from="1694646444306" duration="9000" />
     </task>
     <servers />
   </component>
